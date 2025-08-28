@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const streamService = require('../api-gateway/services/streamservice')
 
 const app = express();
 
@@ -13,7 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/product_service', {
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
@@ -25,8 +27,23 @@ const Product = mongoose.model('Product', new mongoose.Schema({
   description: String
 }));
 
+
+app.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  res.write(":\n\n"); // keep-alive ping
+
+  const clientId = streamService.addClient(res);
+
+  req.on('close', () => {
+    streamService.removeClient(clientId);
+  });
+});
+
 // Routes
-app.get('/products', async (req, res) => {
+app.get('/', async (req, res) => {
   try {
     const products = await Product.find();
     res.json(products);
@@ -35,17 +52,28 @@ app.get('/products', async (req, res) => {
   }
 });
 
-app.post('/products', async (req, res) => {
+app.post('/', async (req, res) => {
   try {
-    const product = new Product(req.body);
+    const { name, price, description } = req.body;
+    const product = new Product({name, price, description});
     await product.save();
+    streamService.broadcast({
+          type: 'products',
+          message: `New product added: ${name}`,
+          product
+        });
+        console.log(product)
     res.status(201).json(product);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-const PORT = 3002;
+const PORT = process.env.PORT 
+// console.log(PORT)
+// console.log(process.env.MONGO_URI)
 app.listen(PORT, () => {
   console.log(`Product service running on port ${PORT}`);
 });
+
+

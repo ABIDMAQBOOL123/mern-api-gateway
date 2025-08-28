@@ -1,3 +1,4 @@
+require('dotenv').config(); 
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -10,13 +11,19 @@ const streamService = require('../api-gateway/services/streamservice');
 const app = express();
 
 // Middleware
-app.use(cors());
-// app.use(bodyParser.json());
+// app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3003', 'http://192.168.1.11:3003', 'http://192.168.1.11:3002'], // Add your actual IPs
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/auth_service', {
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
@@ -93,7 +100,12 @@ app.post('/login', async (req, res) => {
   }
 });
 
-const PORT = 3001;
-app.listen(PORT, () => {
+const PORT = process.env.PORT 
+// console.log(PORT)
+// console.log(process.env.MONGO_URI)
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Auth service running on port ${PORT}`);
 });
+
+
+

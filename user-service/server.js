@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -10,7 +11,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/user_service', {
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
@@ -45,7 +46,7 @@ app.post('/users', async (req, res) => {
   }
 });
 
-const PORT = 3003;
+const PORT = process.env.PORT 
 app.listen(PORT, () => {
   console.log(`User service running on port ${PORT}`);
 });

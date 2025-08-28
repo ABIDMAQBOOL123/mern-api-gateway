@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
@@ -7,15 +8,14 @@ const app = express();
 
 // Middleware
 app.use(cors());
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
+
 
 
 // Service URLs
 const SERVICES = {
-  auth: 'http://localhost:3001',
-  products: 'http://localhost:3002',
-  users: 'http://localhost:3003'
+  auth:  process.env.AUTH_SERVICE,
+  products: process.env.PRODUCTS_SERVICE,
+  users: process.env.USERS_SERVICE,
 };
 
 // Authentication routes - direct to auth service
@@ -40,7 +40,7 @@ app.use('/api/products', createProxyMiddleware({
   target: SERVICES.products,
   changeOrigin: true,
   pathRewrite: {
-    '^/api/products': '/products'   // forward correctly
+    '^/api/products': ''   // forward correctly
   }
 }));
 
@@ -66,7 +66,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Service unavailable' });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT ;
+
+app.listen(PORT, '0.0.0.0',  () => {
   console.log(`API Gateway running on port ${PORT}`);
 });
